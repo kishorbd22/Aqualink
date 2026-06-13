@@ -1,0 +1,74 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aqualink-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://aqualink:aqualink_secret@postgres:5432/aqualink
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - aqualink-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aqualink-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - aqualink-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: aqualink-postgres
+    environment:
+      POSTGRES_USER: aqualink
+      POSTGRES_PASSWORD: aqualink_secret
+      POSTGRES_DB: aqualink
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aqualink"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aqualink-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: aqualink-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - aqualink-network
+
+networks:
+  aqualink-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
