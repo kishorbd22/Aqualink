@@ -37,15 +37,12 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
       });
 
-      // TODO: Uncomment once Transaction model exists
-      // User.hasMany(models.Transaction, {
-      //   foreignKey: 'buyer_id',
-      //   as: 'purchases',
-      // });
-      // User.hasMany(models.Transaction, {
-      //   foreignKey: 'seller_id',
-      //   as: 'sales',
-      // });
+      // A buyer can have many orders
+      User.hasMany(models.Order, {
+        foreignKey: 'buyerId',
+        as: 'buyerOrders',
+        onDelete: 'CASCADE',
+      });
 
       // TODO: Uncomment once Review model exists
       // User.hasMany(models.Review, {

@@ -32,6 +32,12 @@ module.exports = (sequelize, DataTypes) => {
         as: 'fisher',
         onDelete: 'CASCADE',
       });
+
+      Listing.hasMany(models.Order, {
+        foreignKey: 'listingId',
+        as: 'orders',
+        onDelete: 'CASCADE',
+      });
     }
   }
 

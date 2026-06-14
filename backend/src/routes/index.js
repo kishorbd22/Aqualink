@@ -10,6 +10,7 @@ const router = express.Router();
 const { healthCheck } = require('../controllers');
 const authRoutes = require('./auth');
 const listingRoutes = require('./listing');
+const orderRoutes = require('./order');
 
 // Health check endpoint
 router.get('/health', healthCheck);
@@ -20,6 +21,7 @@ router.use('/auth', authRoutes);
 // Listing routes — CRUD for fish listings
 router.use('/listings', listingRoutes);
 
-// Route placeholders - add your route groups here
+// Order routes — CRUD for purchase orders
+router.use('/orders', orderRoutes);
 
 module.exports = router;
