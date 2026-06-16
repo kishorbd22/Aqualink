@@ -12,6 +12,7 @@ const authRoutes = require('./auth');
 const listingRoutes = require('./listing');
 const orderRoutes = require('./order');
 const transactionRoutes = require('./transaction');
+const deliveryRoutes = require('./delivery');
 
 // Health check endpoint
 router.get('/health', healthCheck);
@@ -27,5 +28,8 @@ router.use('/orders', orderRoutes);
 
 // Transaction routes — CRUD for payment transactions
 router.use('/transactions', transactionRoutes);
+
+// Delivery routes — CRUD for order deliveries
+router.use('/deliveries', deliveryRoutes);
 
 module.exports = router;

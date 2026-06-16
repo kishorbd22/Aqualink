@@ -88,7 +88,7 @@ const createTransaction = async (orderId, paymentMethod, user) => {
           {
             model: models.Listing,
             as: 'listing',
-            attributes: ['id', 'title', 'pricePerKg', 'weight'],
+            attributes: ['id', 'species', 'pricePerKg', 'weight'],
           },
         ],
       },

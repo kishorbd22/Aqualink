@@ -27,7 +27,7 @@ module.exports = {
       CREATE TYPE "enum_transactions_payment_status" AS ENUM ('pending', 'paid', 'failed', 'refunded');
     `);
     await queryInterface.sequelize.query(`
-      CREATE TYPE "enum_transactions_settlement_status" AS ENUM ('pending', 'settled');
+      CREATE TYPE "enum_transactions_settlement_status" AS ENUM ('pending', 'settled', 'completed');
     `);
 
     // Create the transactions table

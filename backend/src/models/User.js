@@ -44,6 +44,13 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
       });
 
+      // A transporter can have many deliveries
+      User.hasMany(models.Delivery, {
+        foreignKey: 'transporterId',
+        as: 'deliveries',
+        onDelete: 'CASCADE',
+      });
+
       // TODO: Uncomment once Review model exists
       // User.hasMany(models.Review, {
       //   foreignKey: 'reviewer_id',

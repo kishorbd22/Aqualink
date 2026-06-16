@@ -91,14 +91,14 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
       settlementStatus: {
-        type: DataTypes.ENUM('pending', 'settled'),
+        type: DataTypes.ENUM('pending', 'settled', 'completed'),
         allowNull: false,
         defaultValue: 'pending',
         field: 'settlement_status',
         validate: {
           isIn: {
-            args: [['pending', 'settled']],
-            msg: 'Settlement status must be one of: pending, settled.',
+            args: [['pending', 'settled', 'completed']],
+            msg: 'Settlement status must be one of: pending, settled, completed.',
           },
         },
       },
