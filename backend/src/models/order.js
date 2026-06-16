@@ -38,6 +38,12 @@ module.exports = (sequelize, DataTypes) => {
         as: 'listing',
         onDelete: 'CASCADE',
       });
+
+      Order.hasOne(models.Transaction, {
+        foreignKey: 'orderId',
+        as: 'transaction',
+        onDelete: 'CASCADE',
+      });
     }
   }
 
