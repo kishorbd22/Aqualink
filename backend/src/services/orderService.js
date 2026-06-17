@@ -42,28 +42,17 @@ const createOrder = async (data, buyerId) => {
   // Calculate total price
   const totalPrice = (parseFloat(listing.pricePerKg) * parseFloat(quantityKg)).toFixed(2);
 
-  // Use a transaction to create the order and update listing status atomically
-  const order = await sequelize.transaction(async (t) => {
-    // Create the order
-    const newOrder = await models.Order.create(
-      {
-        buyerId,
-        listingId,
-        quantityKg,
-        totalPrice,
-        status: 'pending',
-      },
-      { transaction: t }
-    );
-
-    // Mark listing as reserved
-    await listing.update({ status: 'reserved' }, { transaction: t });
-
-    return newOrder;
+  // Create the order (no listing status change — multiple pending orders allowed)
+  const newOrder = await models.Order.create({
+    buyerId,
+    listingId,
+    quantityKg,
+    totalPrice,
+    status: 'pending',
   });
 
   // Return the order with associations
-  return await models.Order.findByPk(order.id, {
+  const createdOrder = await models.Order.findByPk(newOrder.id, {
     include: [
       {
         model: models.User,
@@ -83,6 +72,13 @@ const createOrder = async (data, buyerId) => {
       },
     ],
   });
+
+  // Include the listing's current available weight in the response
+  // Weight is NOT deducted at create time — only upon acceptance.
+  return {
+    ...createdOrder.toJSON(),
+    remainingWeight: parseFloat(listing.weight),
+  };
 };
 
 /**
@@ -253,19 +249,59 @@ const updateOrderStatus = async (id, status, user) => {
     );
   }
 
-  // Use transaction to update order status and listing status
+  // Use transaction to update order status and listing inventory atomically
   await sequelize.transaction(async (t) => {
+    // Reload listing inside the transaction to get the latest weight.
+    // This prevents race conditions when multiple orders on the same
+    // listing are accepted concurrently.
+    const listing = await models.Listing.findByPk(order.listingId, {
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+
     await order.update({ status }, { transaction: t });
 
-    // If rejected, set listing back to available
-    if (status === 'rejected') {
-      await order.listing.update({ status: 'available' }, { transaction: t });
+    // --- Inventory Validation & Deduction Logic ---
+    // Before accepting, re-verify that sufficient inventory remains.
+    // The listing was loaded with row-locking inside this transaction,
+    // so this reflects the true current state (not a stale snapshot).
+    if (status === 'accepted') {
+      const currentWeight = parseFloat(listing.weight);
+      const orderedQty = parseFloat(order.quantityKg);
+
+      if (currentWeight < orderedQty) {
+        throw new ValidationError(
+          `Insufficient inventory. Requested ${orderedQty} kg but only ${currentWeight} kg remaining.`
+        );
+      }
+
+      const newWeight = currentWeight - orderedQty;
+
+      if (newWeight <= 0) {
+        // No weight remaining — mark listing as sold
+        // All inventory has been consumed by accepted orders.
+        await listing.update(
+          { weight: 0, status: 'sold' },
+          { transaction: t }
+        );
+      } else {
+        // Partial fulfillment: update remaining weight and make listing
+        // available again so other buyers can purchase the remaining stock.
+        await listing.update(
+          { weight: parseFloat(newWeight.toFixed(2)), status: 'available' },
+          { transaction: t }
+        );
+      }
     }
 
-    // If accepted or delivered, set listing to sold
-    if (status === 'accepted' || status === 'delivered') {
-      await order.listing.update({ status: 'sold' }, { transaction: t });
-    }
+    // For 'rejected': no listing changes needed because inventory was
+    // never deducted at order creation. The listing remains 'available'
+    // for other buyers.
+
+    // For 'delivered': no listing changes are needed because weight was
+    // already deducted at the 'accepted' stage. The listing status may
+    // already be 'available' (if partial fulfillment) or 'sold' (if fully
+    // consumed), and neither should change upon delivery.
   });
 
   // Return updated order with associations

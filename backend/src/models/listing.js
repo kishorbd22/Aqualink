@@ -75,7 +75,7 @@ module.exports = (sequelize, DataTypes) => {
         validate: {
           isDecimal: { msg: 'Weight must be a decimal number.' },
           min: {
-            args: [0.01],
+            args: [0],
             msg: 'Weight must be greater than 0.',
           },
         },
@@ -87,7 +87,7 @@ module.exports = (sequelize, DataTypes) => {
         validate: {
           isDecimal: { msg: 'Price per kg must be a decimal number.' },
           min: {
-            args: [0.01],
+            args: [0],
             msg: 'Price per kg must be greater than 0.',
           },
         },
