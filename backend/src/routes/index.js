@@ -13,6 +13,7 @@ const listingRoutes = require('./listing');
 const orderRoutes = require('./order');
 const transactionRoutes = require('./transaction');
 const deliveryRoutes = require('./delivery');
+const notificationRoutes = require('./notification');
 
 // Health check endpoint
 router.get('/health', healthCheck);
@@ -31,5 +32,8 @@ router.use('/transactions', transactionRoutes);
 
 // Delivery routes — CRUD for order deliveries
 router.use('/deliveries', deliveryRoutes);
+
+// Notification routes — CRUD for in-app notifications
+router.use('/notifications', notificationRoutes);
 
 module.exports = router;

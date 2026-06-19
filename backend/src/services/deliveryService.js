@@ -7,6 +7,7 @@
 const { models, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ValidationError, NotFoundError, ForbiddenError } = require('../utils/errors');
+const notificationService = require('./notificationService');
 
 /**
  * Valid status transitions.
@@ -94,6 +95,16 @@ const createDelivery = async (orderId, transporterId, user) => {
 
     return newDelivery;
   });
+
+  // Notify the assigned transporter about the new delivery
+  notificationService
+    .createNotification(
+      transporterId,
+      'New Delivery Assigned',
+      'You have been assigned a new delivery.',
+      'delivery'
+    )
+    .catch((err) => console.error('Failed to send new-delivery notification:', err.message));
 
   // Return with associations
   return await models.Delivery.findByPk(delivery.id, {
@@ -364,6 +375,47 @@ const updateDeliveryStatus = async (deliveryId, newStatus, user) => {
 
     return delivery;
   });
+
+  // Send notifications based on the new delivery status
+  if (newStatus === 'picked_up') {
+    notificationService
+      .createNotification(
+        delivery.order.buyerId,
+        'Order Picked Up',
+        'Your order has been picked up.',
+        'delivery'
+      )
+      .catch((err) => console.error('Failed to send picked-up notification:', err.message));
+  } else if (newStatus === 'in_transit') {
+    notificationService
+      .createNotification(
+        delivery.order.buyerId,
+        'Order In Transit',
+        'Your order is on the way.',
+        'delivery'
+      )
+      .catch((err) => console.error('Failed to send in-transit notification:', err.message));
+  } else if (newStatus === 'delivered') {
+    // Notify the buyer
+    notificationService
+      .createNotification(
+        delivery.order.buyerId,
+        'Order Delivered',
+        'Your order has been delivered.',
+        'delivery'
+      )
+      .catch((err) => console.error('Failed to send delivered notification to buyer:', err.message));
+
+    // Notify the fisher
+    notificationService
+      .createNotification(
+        delivery.order.listing.fisherId,
+        'Delivery Completed',
+        'The delivery has been completed.',
+        'delivery'
+      )
+      .catch((err) => console.error('Failed to send delivery-completed notification to fisher:', err.message));
+  }
 
   // Return updated delivery with associations
   return await models.Delivery.findByPk(deliveryId, {

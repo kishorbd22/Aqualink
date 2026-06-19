@@ -51,6 +51,13 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
       });
 
+      // A user can have many notifications
+      User.hasMany(models.Notification, {
+        foreignKey: 'userId',
+        as: 'notifications',
+        onDelete: 'CASCADE',
+      });
+
       // TODO: Uncomment once Review model exists
       // User.hasMany(models.Review, {
       //   foreignKey: 'reviewer_id',

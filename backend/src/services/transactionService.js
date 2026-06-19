@@ -7,6 +7,7 @@
 const { models, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ValidationError, NotFoundError, ForbiddenError } = require('../utils/errors');
+const notificationService = require('./notificationService');
 
 /**
  * Create a new transaction for an order.
@@ -72,6 +73,23 @@ const createTransaction = async (orderId, paymentMethod, user) => {
 
     return newTransaction;
   });
+
+  // Notify all admins about the pending payment
+  try {
+    const admins = await models.User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
+    for (const admin of admins) {
+      notificationService
+        .createNotification(
+          admin.id,
+          'Payment Pending',
+          'A payment has been submitted and is awaiting verification.',
+          'payment'
+        )
+        .catch((err) => console.error('Failed to send payment-pending notification:', err.message));
+    }
+  } catch (err) {
+    console.error('Failed to notify admins about pending payment:', err.message);
+  }
 
   // Return with order association
   return await models.Transaction.findByPk(transaction.id, {
@@ -270,6 +288,16 @@ const markAsPaid = async (transactionId, reference, user) => {
       { transaction: t }
     );
   });
+
+  // Notify the buyer that payment was confirmed
+  notificationService
+    .createNotification(
+      transaction.order.buyerId,
+      'Payment Confirmed',
+      'Your payment has been confirmed.',
+      'payment'
+    )
+    .catch((err) => console.error('Failed to send payment-confirmed notification:', err.message));
 
   // Return updated transaction
   return await models.Transaction.findByPk(transactionId, {

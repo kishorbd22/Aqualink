@@ -6,6 +6,7 @@
 
 const { models, sequelize } = require('../models');
 const { ValidationError, NotFoundError, ForbiddenError } = require('../utils/errors');
+const notificationService = require('./notificationService');
 
 /**
  * Create a new order.
@@ -71,6 +72,19 @@ const createOrder = async (data, buyerId) => {
         ],
       },
     ],
+  });
+
+  // Notify the listing owner (fisher) about the new order
+  notificationService
+  .createNotification(
+      listing.fisherId,
+      'New Order',
+      `New order received for ${listing.species}.`,
+      'order'
+  )
+  .catch(err => {
+      console.error('NOTIFICATION ERROR');
+      console.error(err);
   });
 
   // Include the listing's current available weight in the response
@@ -303,6 +317,42 @@ const updateOrderStatus = async (id, status, user) => {
     // already be 'available' (if partial fulfillment) or 'sold' (if fully
     // consumed), and neither should change upon delivery.
   });
+
+  // Send notifications after successful status update
+  if (status === 'accepted') {
+    // Notify the buyer that their order was accepted
+    notificationService
+      .createNotification(
+        order.buyerId,
+        'Order Accepted',
+        `Your order for ${order.listing.species} has been accepted.`,
+        'order'
+      )
+      .catch((err) => console.error('Failed to send order-accepted notification:', err.message));
+
+    // Notify the fisher if the listing sold out (weight became 0 and status became sold)
+    const updatedListing = await models.Listing.findByPk(order.listingId);
+    if (updatedListing && parseFloat(updatedListing.weight) === 0 && updatedListing.status === 'sold') {
+      notificationService
+        .createNotification(
+          updatedListing.fisherId,
+          'Listing Sold Out',
+          `Your listing '${updatedListing.species}' has sold out.`,
+          'inventory'
+        )
+        .catch((err) => console.error('Failed to send listing-sold-out notification:', err.message));
+    }
+  } else if (status === 'rejected') {
+    // Notify the buyer that their order was rejected
+    notificationService
+      .createNotification(
+        order.buyerId,
+        'Order Rejected',
+        `Your order for ${order.listing.species} has been rejected.`,
+        'order'
+      )
+      .catch((err) => console.error('Failed to send order-rejected notification:', err.message));
+  }
 
   // Return updated order with associations
   return await models.Order.findByPk(id, {
