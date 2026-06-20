@@ -50,6 +50,12 @@ module.exports = (sequelize, DataTypes) => {
         as: 'delivery',
         onDelete: 'CASCADE',
       });
+
+      Order.hasOne(models.Review, {
+        foreignKey: 'orderId',
+        as: 'review',
+        onDelete: 'CASCADE',
+      });
     }
   }
 

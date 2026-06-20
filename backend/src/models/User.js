@@ -58,11 +58,19 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
       });
 
-      // TODO: Uncomment once Review model exists
-      // User.hasMany(models.Review, {
-      //   foreignKey: 'reviewer_id',
-      //   as: 'reviews',
-      // });
+      // A user (buyer) can have many reviews they wrote
+      User.hasMany(models.Review, {
+        foreignKey: 'buyerId',
+        as: 'buyerReviews',
+        onDelete: 'CASCADE',
+      });
+
+      // A user (fisher) can have many reviews they received
+      User.hasMany(models.Review, {
+        foreignKey: 'fisherId',
+        as: 'fisherReviews',
+        onDelete: 'CASCADE',
+      });
     }
   }
 

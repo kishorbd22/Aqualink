@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "sequelize": "^6.37.8",
     "umzug": "^3.8.0"
   }
 }
