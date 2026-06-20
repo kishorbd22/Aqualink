@@ -15,6 +15,7 @@ const transactionRoutes = require('./transaction');
 const deliveryRoutes = require('./delivery');
 const notificationRoutes = require('./notification');
 const reviewRoutes = require('./review');
+const dashboardRoutes = require('./dashboard');
 
 // Health check endpoint
 router.get('/health', healthCheck);
@@ -39,5 +40,8 @@ router.use('/notifications', notificationRoutes);
 
 // Review routes — CRUD for order reviews
 router.use('/reviews', reviewRoutes);
+
+// Dashboard routes — Role-based analytics
+router.use('/dashboard', dashboardRoutes);
 
 module.exports = router;

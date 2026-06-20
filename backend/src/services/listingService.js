@@ -3,7 +3,7 @@
  *
  * Business logic for fish listing CRUD operations.
  */
-
+const { Op } = require('sequelize');
 const { models } = require('../models');
 const { ValidationError, NotFoundError, ForbiddenError } = require('../utils/errors');
 
@@ -47,14 +47,15 @@ const getListings = async (filters = {}) => {
   const where = {};
 
   if (filters.status) where.status = filters.status;
-  if (filters.species) where.species = { [models.Sequelize.Op.iLike]: `%${filters.species}%` };
+  if (filters.species) where.species = { [Op.iLike]: `%${filters.species}%` };
   if (filters.fisherId) where.fisherId = filters.fisherId;
   if (filters.minPrice || filters.maxPrice) {
     where.pricePerKg = {};
-    if (filters.minPrice) where.pricePerKg[models.Sequelize.Op.gte] = parseFloat(filters.minPrice);
-    if (filters.maxPrice) where.pricePerKg[models.Sequelize.Op.lte] = parseFloat(filters.maxPrice);
+    if (filters.minPrice) where.pricePerKg[Op.gte] = parseFloat(filters.minPrice);
+    if (filters.maxPrice) where.pricePerKg[Op.lte] = parseFloat(filters.maxPrice);
   }
 
+  console.log(where);
   return await models.Listing.findAll({
     where,
     include: [
