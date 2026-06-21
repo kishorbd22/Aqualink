@@ -5,7 +5,6 @@
  */
 
 const authService = require('../services/authService');
-const { ValidationError } = require('../utils/errors');
 
 /**
  * POST /api/auth/register
@@ -14,11 +13,6 @@ const { ValidationError } = require('../utils/errors');
 const register = async (req, res, next) => {
   try {
     const { name, phone, email, password, role } = req.body;
-
-    // Validate required fields
-    if (!name || !phone || !email || !password || !role) {
-      throw new ValidationError('Name, phone, email, and password are required.');
-    }
 
     const result = await authService.register({ name, phone, email, password, role });
 
@@ -39,11 +33,6 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
-    // Validate required fields
-    if (!email || !password) {
-      throw new ValidationError('Email and password are required.');
-    }
 
     const result = await authService.login({ email, password });
 

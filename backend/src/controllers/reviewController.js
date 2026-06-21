@@ -5,7 +5,6 @@
  */
 
 const reviewService = require('../services/reviewService');
-const { ValidationError } = require('../utils/errors');
 
 /**
  * POST /api/reviews
@@ -14,10 +13,6 @@ const { ValidationError } = require('../utils/errors');
 const createReview = async (req, res, next) => {
   try {
     const { orderId, rating, comment } = req.body;
-
-    if (!orderId || rating === undefined || rating === null) {
-      throw new ValidationError('orderId and rating are required.');
-    }
 
     const review = await reviewService.createReview(
       { orderId, rating, comment },
@@ -100,10 +95,6 @@ const updateReview = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { rating, comment } = req.body;
-
-    if (rating === undefined && comment === undefined) {
-      throw new ValidationError('Provide at least rating or comment to update.');
-    }
 
     const review = await reviewService.updateReview(id, { rating, comment }, req.user);
 

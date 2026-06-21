@@ -5,7 +5,6 @@
  */
 
 const listingService = require('../services/listingService');
-const { ValidationError } = require('../utils/errors');
 
 /**
  * POST /api/listings
@@ -14,11 +13,6 @@ const { ValidationError } = require('../utils/errors');
 const createListing = async (req, res, next) => {
   try {
     const { species, weight, pricePerKg, freshnessTimestamp, photoUrl } = req.body;
-
-    // Validate required fields
-    if (!species || !weight || !pricePerKg || !freshnessTimestamp) {
-      throw new ValidationError('Species, weight, pricePerKg, and freshnessTimestamp are required.');
-    }
 
     const listing = await listingService.createListing(
       { species, weight, pricePerKg, freshnessTimestamp, photoUrl },

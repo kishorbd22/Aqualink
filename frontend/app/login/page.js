@@ -85,4 +85,3 @@ export default function LoginPage() {
     </div>
   );
 }
-</write_to_file>

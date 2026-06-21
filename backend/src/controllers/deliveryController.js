@@ -5,7 +5,6 @@
  */
 
 const deliveryService = require('../services/deliveryService');
-const { ValidationError } = require('../utils/errors');
 
 /**
  * POST /api/deliveries
@@ -14,10 +13,6 @@ const { ValidationError } = require('../utils/errors');
 const createDelivery = async (req, res, next) => {
   try {
     const { orderId, transporterId } = req.body;
-
-    if (!orderId || !transporterId) {
-      throw new ValidationError('orderId and transporterId are required.');
-    }
 
     const delivery = await deliveryService.createDelivery(
       orderId,
@@ -79,10 +74,6 @@ const updateDeliveryStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-
-    if (!status) {
-      throw new ValidationError('status is required.');
-    }
 
     const delivery = await deliveryService.updateDeliveryStatus(id, status, req.user);
 

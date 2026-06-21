@@ -159,4 +159,3 @@ export default function ListingsPage() {
     </div>
   );
 }
-</write_to_file>

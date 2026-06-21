@@ -5,7 +5,6 @@
  */
 
 const notificationService = require('../services/notificationService');
-const { ValidationError } = require('../utils/errors');
 
 /**
  * POST /api/notifications
@@ -14,10 +13,6 @@ const { ValidationError } = require('../utils/errors');
 const createNotification = async (req, res, next) => {
   try {
     const { userId, title, message, type } = req.body;
-
-    if (!userId || !title || !message || !type) {
-      throw new ValidationError('userId, title, message, and type are required.');
-    }
 
     const notification = await notificationService.createNotification(
       userId,

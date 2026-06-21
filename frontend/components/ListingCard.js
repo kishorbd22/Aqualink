@@ -86,4 +86,3 @@ export default function ListingCard({ listing, onDelete }) {
     </div>
   );
 }
-</write_to_file>

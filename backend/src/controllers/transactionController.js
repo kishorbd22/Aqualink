@@ -5,7 +5,6 @@
  */
 
 const transactionService = require('../services/transactionService');
-const { ValidationError } = require('../utils/errors');
 
 /**
  * POST /api/transactions
@@ -14,10 +13,6 @@ const { ValidationError } = require('../utils/errors');
 const createTransaction = async (req, res, next) => {
   try {
     const { orderId, paymentMethod } = req.body;
-
-    if (!orderId || !paymentMethod) {
-      throw new ValidationError('orderId and paymentMethod are required.');
-    }
 
     const transaction = await transactionService.createTransaction(
       orderId,

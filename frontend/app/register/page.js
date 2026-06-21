@@ -134,4 +134,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-</write_to_file>

@@ -5,7 +5,6 @@
  */
 
 const orderService = require('../services/orderService');
-const { ValidationError } = require('../utils/errors');
 
 /**
  * POST /api/orders
@@ -14,10 +13,6 @@ const { ValidationError } = require('../utils/errors');
 const createOrder = async (req, res, next) => {
   try {
     const { listingId, quantityKg } = req.body;
-
-    if (!listingId || !quantityKg) {
-      throw new ValidationError('listingId and quantityKg are required.');
-    }
 
     const order = await orderService.createOrder(
       { listingId, quantityKg },
@@ -98,10 +93,6 @@ const updateOrderStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-
-    if (!status) {
-      throw new ValidationError('Status is required.');
-    }
 
     const order = await orderService.updateOrderStatus(id, status, req.user);
 
