@@ -6,6 +6,7 @@
 const { Op } = require('sequelize');
 const { models } = require('../models');
 const { ValidationError, NotFoundError, ForbiddenError } = require('../utils/errors');
+const { extractPagination, buildOrder, buildPaginationMeta } = require('../utils/pagination');
 
 /**
  * Create a new fish listing.
@@ -39,11 +40,13 @@ const createListing = async (data, fisherId) => {
 };
 
 /**
- * Get all listings with optional filtering.
+ * Get all listings with optional filtering, pagination, and sorting.
+ * Preserves all existing filters: status, species, fisherId, minPrice, maxPrice.
  * @param {Object} filters - { status, species, fisherId, minPrice, maxPrice }
- * @returns {Array} List of listings
+ * @param {Object} [pagination] - { page, limit, sortBy, order }
+ * @returns {{ listings: Array, pagination: Object }}
  */
-const getListings = async (filters = {}) => {
+const getListings = async (filters = {}, pagination = {}) => {
   const where = {};
 
   if (filters.status) where.status = filters.status;
@@ -55,8 +58,12 @@ const getListings = async (filters = {}) => {
     if (filters.maxPrice) where.pricePerKg[Op.lte] = parseFloat(filters.maxPrice);
   }
 
-  console.log(where);
-  return await models.Listing.findAll({
+  const { page, limit, offset, sortBy, order } = extractPagination(pagination, {
+    defaultSortBy: 'createdAt',
+    defaultOrder: 'DESC',
+  });
+
+  const { count: total, rows: listings } = await models.Listing.findAndCountAll({
     where,
     include: [
       {
@@ -65,8 +72,16 @@ const getListings = async (filters = {}) => {
         attributes: ['id', 'name', 'phone', 'role'],
       },
     ],
-    order: [['createdAt', 'DESC']],
+    order: buildOrder(sortBy, order),
+    offset,
+    limit,
+    distinct: true,
   });
+
+  return {
+    listings,
+    pagination: buildPaginationMeta(total, page, limit),
+  };
 };
 
 /**

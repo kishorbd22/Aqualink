@@ -7,9 +7,11 @@
 
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
 
 const routes = require('./routes');
+const swaggerSpec = require('./docs/swagger');
 const { AppError } = require('./utils/errors');
 
 const app = express();
@@ -22,6 +24,13 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Swagger documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customSiteTitle: 'AquaLink API Documentation',
+  customCss: '.swagger-ui .topbar { display: none }',
+}));
 
 // Routes
 app.use('/api', routes);

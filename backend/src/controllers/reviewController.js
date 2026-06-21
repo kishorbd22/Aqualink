@@ -36,7 +36,7 @@ const createReview = async (req, res, next) => {
 
 /**
  * GET /api/reviews
- * Get all reviews with optional filters (query params).
+ * Get all reviews with optional filters, pagination, and sorting (query params).
  * Public read access.
  */
 const getReviews = async (req, res, next) => {
@@ -53,11 +53,19 @@ const getReviews = async (req, res, next) => {
       if (filters[key] === undefined) delete filters[key];
     });
 
-    const reviews = await reviewService.getReviews(filters);
+    const pagination = {
+      page: req.query.page,
+      limit: req.query.limit,
+      sortBy: req.query.sortBy,
+      order: req.query.order,
+    };
+
+    const { reviews, pagination: meta } = await reviewService.getReviews(filters, pagination);
 
     res.status(200).json({
       success: true,
       count: reviews.length,
+      pagination: meta,
       data: { reviews },
     });
   } catch (error) {

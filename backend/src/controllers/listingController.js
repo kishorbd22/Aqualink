@@ -37,7 +37,7 @@ const createListing = async (req, res, next) => {
 
 /**
  * GET /api/listings
- * Get all listings with optional filters (query params).
+ * Get all listings with optional filters, pagination, and sorting (query params).
  */
 const getListings = async (req, res, next) => {
   try {
@@ -54,11 +54,19 @@ const getListings = async (req, res, next) => {
       if (filters[key] === undefined) delete filters[key];
     });
 
-    const listings = await listingService.getListings(filters);
+    const pagination = {
+      page: req.query.page,
+      limit: req.query.limit,
+      sortBy: req.query.sortBy,
+      order: req.query.order,
+    };
+
+    const { listings, pagination: meta } = await listingService.getListings(filters, pagination);
 
     res.status(200).json({
       success: true,
       count: listings.length,
+      pagination: meta,
       data: { listings },
     });
   } catch (error) {

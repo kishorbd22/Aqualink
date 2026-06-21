@@ -38,16 +38,25 @@ const createNotification = async (req, res, next) => {
 
 /**
  * GET /api/notifications
- * Get all notifications scoped to the authenticated user's permissions.
+ * Get all notifications scoped to the authenticated user's permissions,
+ * with optional pagination and sorting.
  */
 const getNotifications = async (req, res, next) => {
   try {
-    const result = await notificationService.getNotifications(req.user);
+    const pagination = {
+      page: req.query.page,
+      limit: req.query.limit,
+      sortBy: req.query.sortBy,
+      order: req.query.order,
+    };
+
+    const result = await notificationService.getNotifications(req.user, pagination);
 
     res.status(200).json({
       success: true,
       count: result.notifications.length,
       unreadCount: result.unreadCount,
+      pagination: result.pagination,
       data: { notifications: result.notifications },
     });
   } catch (error) {

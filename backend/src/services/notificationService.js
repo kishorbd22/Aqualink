@@ -8,6 +8,7 @@
 const { models } = require('../models');
 const { Op } = require('sequelize');
 const { ValidationError, NotFoundError, ForbiddenError } = require('../utils/errors');
+const { extractPagination, buildOrder, buildPaginationMeta } = require('../utils/pagination');
 
 /**
  * Create a new notification for a user.
@@ -47,15 +48,13 @@ const createNotification = async (userId, title, message, type) => {
 };
 
 /**
- * Get notifications scoped to the authenticated user's permissions.
- * Buyers see their own notifications.
- * Fishers see their own notifications.
- * Transporters see their own notifications.
- * Admins see all notifications.
+ * Get notifications scoped to the authenticated user's permissions, with pagination and sorting.
+ * Buyers see their own notifications. Fishers see their own. Transporters see their own. Admins see all.
  * @param {Object} user - Authenticated user { id, role }
- * @returns {Object} { notifications, unreadCount }
+ * @param {Object} [pagination] - { page, limit, sortBy, order }
+ * @returns {Object} { notifications, unreadCount, pagination }
  */
-const getNotifications = async (user) => {
+const getNotifications = async (user, pagination = {}) => {
   const where = {};
 
   // Non-admin users only see their own notifications
@@ -63,16 +62,24 @@ const getNotifications = async (user) => {
     where.userId = user.id;
   }
 
-  const notifications = await models.Notification.findAll({
-    where,
-    order: [['createdAt', 'DESC']],
-  });
-
+  // Unread count is always computed across ALL notifications (not just the page)
   const unreadCount = await models.Notification.count({
     where: { ...where, isRead: false },
   });
 
-  return { notifications, unreadCount };
+  const { page, limit, offset, sortBy, order } = extractPagination(pagination, {
+    defaultSortBy: 'createdAt',
+    defaultOrder: 'DESC',
+  });
+
+  const { count: total, rows: notifications } = await models.Notification.findAndCountAll({
+    where,
+    order: buildOrder(sortBy, order),
+    offset,
+    limit,
+  });
+
+  return { notifications, unreadCount, pagination: buildPaginationMeta(total, page, limit) };
 };
 
 /**

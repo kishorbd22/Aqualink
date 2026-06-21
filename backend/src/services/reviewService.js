@@ -8,6 +8,7 @@
 const { models } = require('../models');
 const { ValidationError, NotFoundError, ForbiddenError } = require('../utils/errors');
 const notificationService = require('./notificationService');
+const { extractPagination, buildOrder, buildPaginationMeta } = require('../utils/pagination');
 
 /**
  * Create a new review.
@@ -112,12 +113,13 @@ const createReview = async (data, user) => {
 };
 
 /**
- * Get all reviews with optional filtering.
- * Admins see all. Public access for read.
+ * Get all reviews with optional filtering, pagination, and sorting.
+ * Preserves all existing filters: fisherId, buyerId, rating, orderId.
  * @param {Object} filters - { fisherId, buyerId, rating, orderId }
- * @returns {Array} List of reviews
+ * @param {Object} [pagination] - { page, limit, sortBy, order }
+ * @returns {{ reviews: Array, pagination: Object }}
  */
-const getReviews = async (filters = {}) => {
+const getReviews = async (filters = {}, pagination = {}) => {
   const where = {};
 
   if (filters.fisherId) where.fisherId = filters.fisherId;
@@ -125,7 +127,12 @@ const getReviews = async (filters = {}) => {
   if (filters.rating) where.rating = filters.rating;
   if (filters.orderId) where.orderId = filters.orderId;
 
-  return await models.Review.findAll({
+  const { page, limit, offset, sortBy, order } = extractPagination(pagination, {
+    defaultSortBy: 'createdAt',
+    defaultOrder: 'DESC',
+  });
+
+  const { count: total, rows: reviews } = await models.Review.findAndCountAll({
     where,
     include: [
       {
@@ -149,8 +156,16 @@ const getReviews = async (filters = {}) => {
         attributes: ['id', 'name', 'phone', 'role'],
       },
     ],
-    order: [['createdAt', 'DESC']],
+    order: buildOrder(sortBy, order),
+    offset,
+    limit,
+    distinct: true,
   });
+
+  return {
+    reviews,
+    pagination: buildPaginationMeta(total, page, limit),
+  };
 };
 
 /**

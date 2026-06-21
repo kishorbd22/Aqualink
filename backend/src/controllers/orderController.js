@@ -36,7 +36,7 @@ const createOrder = async (req, res, next) => {
 
 /**
  * GET /api/orders
- * Get all orders with optional filters (query params).
+ * Get all orders with optional filters, pagination, and sorting (query params).
  * Results are scoped to the authenticated user's permissions.
  */
 const getOrders = async (req, res, next) => {
@@ -52,11 +52,19 @@ const getOrders = async (req, res, next) => {
       if (filters[key] === undefined) delete filters[key];
     });
 
-    const orders = await orderService.getOrders(filters, req.user);
+    const pagination = {
+      page: req.query.page,
+      limit: req.query.limit,
+      sortBy: req.query.sortBy,
+      order: req.query.order,
+    };
+
+    const { orders, pagination: meta } = await orderService.getOrders(filters, req.user, pagination);
 
     res.status(200).json({
       success: true,
       count: orders.length,
+      pagination: meta,
       data: { orders },
     });
   } catch (error) {

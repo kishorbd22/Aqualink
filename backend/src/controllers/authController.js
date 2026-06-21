@@ -16,7 +16,7 @@ const register = async (req, res, next) => {
     const { name, phone, email, password, role } = req.body;
 
     // Validate required fields
-    if (!name || !phone || !email || !password) {
+    if (!name || !phone || !email || !password || !role) {
       throw new ValidationError('Name, phone, email, and password are required.');
     }
 

@@ -26,6 +26,8 @@
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.11.3",
     "sequelize": "^6.35.0",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "umzug": "^3.8.0"
   },
   "devDependencies": {

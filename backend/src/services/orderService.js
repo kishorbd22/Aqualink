@@ -7,6 +7,7 @@
 const { models, sequelize } = require('../models');
 const { ValidationError, NotFoundError, ForbiddenError } = require('../utils/errors');
 const notificationService = require('./notificationService');
+const { extractPagination, buildOrder, buildPaginationMeta } = require('../utils/pagination');
 
 /**
  * Create a new order.
@@ -96,13 +97,15 @@ const createOrder = async (data, buyerId) => {
 };
 
 /**
- * Get all orders with optional filtering.
+ * Get all orders with optional filtering, pagination, and sorting.
  * Buyers see their own orders. Fishers see orders on their listings. Admins see all.
+ * Preserves all existing filters: status, buyerId, listingId.
  * @param {Object} filters - { status, buyerId, listingId }
  * @param {Object} user - Authenticated user { id, role }
- * @returns {Array} List of orders
+ * @param {Object} [pagination] - { page, limit, sortBy, order }
+ * @returns {{ orders: Array, pagination: Object }}
  */
-const getOrders = async (filters = {}, user) => {
+const getOrders = async (filters = {}, user, pagination = {}) => {
   const where = {};
 
   if (filters.status) where.status = filters.status;
@@ -119,7 +122,7 @@ const getOrders = async (filters = {}, user) => {
     });
     const listingIds = userListings.map((l) => l.id);
     if (listingIds.length === 0) {
-      return []; // No listings, no orders
+      return { orders: [], pagination: { total: 0, page: 1, limit: 10, totalPages: 0, hasNext: false, hasPrevious: false } };
     }
     where.listingId = { [models.Sequelize.Op.in]: listingIds };
   } else if (filters.buyerId) {
@@ -128,7 +131,12 @@ const getOrders = async (filters = {}, user) => {
 
   if (filters.listingId) where.listingId = filters.listingId;
 
-  return await models.Order.findAll({
+  const { page, limit, offset, sortBy, order } = extractPagination(pagination, {
+    defaultSortBy: 'createdAt',
+    defaultOrder: 'DESC',
+  });
+
+  const { count: total, rows: orders } = await models.Order.findAndCountAll({
     where,
     include: [
       {
@@ -148,8 +156,16 @@ const getOrders = async (filters = {}, user) => {
         ],
       },
     ],
-    order: [['createdAt', 'DESC']],
+    order: buildOrder(sortBy, order),
+    offset,
+    limit,
+    distinct: true,
   });
+
+  return {
+    orders,
+    pagination: buildPaginationMeta(total, page, limit),
+  };
 };
 
 /**
