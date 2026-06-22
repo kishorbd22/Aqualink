@@ -8,6 +8,10 @@
 const express = require('express');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const compression = require('compression');
+const hpp = require('hpp');
 require('dotenv').config();
 
 const routes = require('./routes');
@@ -17,13 +21,48 @@ const { AppError } = require('./utils/errors');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-}));
+// Security Middleware
+app.use(
+  helmet({
+    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+  })
+);
+
+const corsOrigin = process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:3000';
+const corsCredentials = (process.env.CORS_CREDENTIALS || 'true').toLowerCase() === 'true';
+app.use(
+  cors({
+    origin: corsOrigin,
+    credentials: corsCredentials,
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// HTTP Parameter Pollution protection
+app.use(hpp());
+
+// Compression
+app.use(compression());
+
+// Rate limiting
+const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10);
+const maxRequests = parseInt(process.env.RATE_LIMIT_MAX || '100', 10);
+const trustProxy = (process.env.RATE_LIMIT_TRUST_PROXY || 'false').toLowerCase() === 'true';
+
+if (trustProxy) {
+  app.set('trust proxy', 1);
+}
+
+const limiter = rateLimit({
+  windowMs,
+  max: maxRequests,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api', limiter);
 
 // Swagger documentation
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
