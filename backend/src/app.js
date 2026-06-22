@@ -127,19 +127,21 @@ process.on('unhandledRejection', (reason) => {
   console.error('[FATAL] Unhandled Rejection:', reason);
 });
 
-// Graceful shutdown
-const server = app.listen(PORT, () => {
-  console.log(`AquaLink backend is running on port ${PORT}`);
-});
+// Only start the server when this file is run directly (not when imported by tests)
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    console.log(`AquaLink backend is running on port ${PORT}`);
+  });
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
-  server.close(() => process.exit(0));
-});
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    server.close(() => process.exit(0));
+  });
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received. Shutting down gracefully...');
-  server.close(() => process.exit(0));
-});
+  process.on('SIGINT', () => {
+    console.log('SIGINT received. Shutting down gracefully...');
+    server.close(() => process.exit(0));
+  });
+}
 
 module.exports = app;
